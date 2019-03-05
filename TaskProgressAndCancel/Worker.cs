@@ -67,14 +67,11 @@ namespace TaskProgressAndCancel
 
             await Task.WhenAll(tasks).ContinueWith((t) => 
             {
-
-                foreach (var task in tasks)
+                //t.Result contains array of string (composite Task<string>)
+                foreach (var result in t.Result)
                 {
-                    _package.Add(task.Result);
-                    
+                    _package.Add(result);
                 }
-                //for (int i = 0; i < size; i++)
-                //    _package.Add(t.GetAwaiter().GetResult());
             });
 
             return _package;

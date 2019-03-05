@@ -25,17 +25,5 @@ namespace TaskProgressAndCancel
         {
             InitializeComponent();
         }
-
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            ProgressBar.Background = Brushes.LightSalmon;
-            //Refresh(this);
-
-            //Dispatcher.Invoke(new Action(() => { }), DispatcherPriority.ApplicationIdle);
-
-            (DataContext as MainWindowViewModel).SynchronousWorkCommand.Execute(new object());
-        }
     }
 }
-
-//Command="{Binding SynchronousWorkCommand}"
