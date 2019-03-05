@@ -11,21 +11,41 @@ namespace TaskProgressAndCancel
     {
         private List<string> _package;
         private int _index;
-
+        private object _lock = new object();
+                
         public string CreateItem()
         {
-            System.Threading.Thread.Sleep(1000);
-            return $"Item nr {(_index++).ToString()} collected." + Environment.NewLine;
+            string outcome = string.Empty;
+            Thread.Sleep(1000);
+
+            lock (_lock)
+            {
+                outcome = $"Item nr {(_index).ToString()} collected." + Environment.NewLine;
+                var temp = _index + 1;
+                Thread.Sleep(50);
+                _index = temp;
+                return outcome;
+            }
         }
 
         public async Task<string> CreateItemAsync()
         {
             return await Task.Run(() => {
-                System.Threading.Thread.Sleep(1000);
-                return $"Item nr {(_index++).ToString()} collected." + Environment.NewLine;
+                string outcome = string.Empty;
+                Thread.Sleep(1000);
+
+                lock (_lock)
+                {
+                    outcome = $"Item nr {(_index).ToString()} collected." + Environment.NewLine;
+                    var temp = _index + 1;
+                    Thread.Sleep(5);
+                    _index = temp;
+                    return outcome;
+                }
             });
-            
+
         }
+
 
         public List<string> CreatePackage(int size)
         {
@@ -82,6 +102,19 @@ namespace TaskProgressAndCancel
                 }
             });
 
+            return _package;
+        }
+
+        public List<string> CreatePackageParallelSync(int size)
+        {
+            _package = new List<string>();
+            _index = 0;
+
+            Parallel.For(0, size, (Action<int>)((i) => 
+            {
+                _package.Add(this.CreateItem());
+            }));
+            
             return _package;
         }
 

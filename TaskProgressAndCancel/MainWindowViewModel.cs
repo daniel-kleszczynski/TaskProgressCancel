@@ -11,7 +11,7 @@ namespace TaskProgressAndCancel
 {
     public class MainWindowViewModel : ViewModelBase
     {
-        private const int ITEMS_COUNT = 5;
+        private const int ITEMS_COUNT = 7;
 
         private SolidColorBrush _progressBarBackground;
         private int _progressValue;
@@ -23,12 +23,14 @@ namespace TaskProgressAndCancel
             SynchronousWorkCommand = new RelayCommand(SynchronousWork);
             AsynchronousWorkCommand = new RelayCommand(AsynchronousWork);
             ParallelAsynchronousWorkCommand = new RelayCommand(ParallelAsynchronousWork);
+            ParallelSynchronousWorkCommand = new RelayCommand(ParallelSynchronousWork);
             CancelWorkCommand = new RelayCommand(CancelWork);
         }
 
         public ICommand SynchronousWorkCommand { get;  }
         public ICommand AsynchronousWorkCommand { get;  }
         public ICommand ParallelAsynchronousWorkCommand { get;  }
+        public ICommand ParallelSynchronousWorkCommand { get;  }
         public ICommand CancelWorkCommand { get;  }
 
         public SolidColorBrush ProgressBarBackground
@@ -107,6 +109,23 @@ namespace TaskProgressAndCancel
             Worker worker = new Worker();
             var stopWatch = Stopwatch.StartNew();
             var package = await worker.CreatePackageParallelAsync(ITEMS_COUNT);
+
+            stopWatch.Stop();
+
+            foreach (var item in package)
+                Items.Add(item);
+
+            Items.Add($"Execution time: {stopWatch.ElapsedMilliseconds}");
+        }
+
+        private void ParallelSynchronousWork(object obj)
+        {
+            Worker worker = new Worker();
+
+            GuiSetup();
+
+            var stopWatch = Stopwatch.StartNew();
+            var package = worker.CreatePackageParallelSync(ITEMS_COUNT);
 
             stopWatch.Stop();
 

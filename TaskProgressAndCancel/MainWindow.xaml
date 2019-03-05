@@ -13,6 +13,7 @@
         <Button Command="{Binding SynchronousWorkCommand}">Synchronously</Button>
         <Button Command="{Binding AsynchronousWorkCommand}">Asynchronously</Button>
         <Button Command="{Binding ParallelAsynchronousWorkCommand}">Parallel Asynchronously</Button>
+        <Button Command="{Binding ParallelSynchronousWorkCommand}">Parallel Synchronously</Button>
         <Button Command="{Binding CancelWorkCommand}" IsEnabled="{Binding IsCancelButtonEnabled}">Cancel</Button>
         <ProgressBar Value="{Binding ProgressValue}" Background="{Binding ProgressBarBackground}" Height="20"></ProgressBar>
         <ListView ItemsSource="{Binding Items}"></ListView>
