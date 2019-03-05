@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -53,15 +54,19 @@ namespace TaskProgressAndCancel
             ProgressBarBackground = Brushes.LightSalmon;
             RefreshGui();
 
+            var stopWatch = Stopwatch.StartNew();
             var package = worker.CreatePackage(ITEMS_COUNT);
+
+            stopWatch.Stop();
 
             foreach (var item in package)
                 Items.Add(item);
+
+            Items.Add($"Execution time: {stopWatch.ElapsedMilliseconds}");
         }
 
         private async void AsynchronousWork(object obj)
         {
-            
             Worker worker = new Worker();
 
             Items.Clear();
@@ -71,8 +76,11 @@ namespace TaskProgressAndCancel
             var progressTracker = new Progress<ProgressReport>();
             progressTracker.ProgressChanged += ProgressTracker_ProgressChanged;
 
+            var stopWatch = Stopwatch.StartNew();
 
             var package = await worker.CreatePackageAsync(ITEMS_COUNT, progressTracker);
+            stopWatch.Stop();
+            Items.Add($"Execution time: {stopWatch.ElapsedMilliseconds}");
         }
 
         private async void ParallelAsynchronousWork(object obj)
@@ -83,10 +91,15 @@ namespace TaskProgressAndCancel
             ProgressBarBackground = Brushes.LightSalmon;
             RefreshGui();
 
+            var stopWatch = Stopwatch.StartNew();
             var package = await worker.CreatePackageParallelAsync(ITEMS_COUNT);
+
+            stopWatch.Stop();
 
             foreach (var item in package)
                 Items.Add(item);
+
+            Items.Add($"Execution time: {stopWatch.ElapsedMilliseconds}");
         }
 
         private void ProgressTracker_ProgressChanged(object sender, ProgressReport e)
