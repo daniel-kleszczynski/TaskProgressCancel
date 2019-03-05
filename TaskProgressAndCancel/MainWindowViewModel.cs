@@ -16,6 +16,7 @@ namespace TaskProgressAndCancel
         private SolidColorBrush _progressBarBackground;
         private int _progressValue;
         private CancellationTokenSource _cancellationSource;
+        private bool _isCancelButtonEnabled;
 
         public MainWindowViewModel()
         {
@@ -43,16 +44,20 @@ namespace TaskProgressAndCancel
         }
 
 
+        public bool IsCancelButtonEnabled
+        {
+            get { return _isCancelButtonEnabled; }
+            set { SetProperty(ref _isCancelButtonEnabled, value); }
+        }
+
+
         public ObservableCollection<string> Items { get; set; } = new ObservableCollection<string>();
 
         private void SynchronousWork(object obj)
         {
             Worker worker = new Worker();
 
-            Items.Clear();
-            ProgressBarBackground = Brushes.LightSalmon;
-            ProgressValue = 0;
-            RefreshGui();
+            GuiSetup();
 
             var stopWatch = Stopwatch.StartNew();
             var package = worker.CreatePackage(ITEMS_COUNT);
@@ -69,10 +74,7 @@ namespace TaskProgressAndCancel
         {
             Worker worker = new Worker();
 
-            Items.Clear();
-            ProgressBarBackground = Brushes.LightSalmon;
-            ProgressValue = 0;
-            RefreshGui();
+            GuiSetup();
 
             var progressTracker = new Progress<ProgressReport>();
             progressTracker.ProgressChanged += ProgressTracker_ProgressChanged;
@@ -85,22 +87,22 @@ namespace TaskProgressAndCancel
                 var package = await worker.CreatePackageAsync(ITEMS_COUNT, progressTracker, 
                     _cancellationSource.Token);
             }
-            catch (OperationCanceledException) { }
+            catch (OperationCanceledException)
+            {
+                Items.Add($"Work has been cancelled.");
+            }
             finally
             {
                 stopWatch.Stop();
-                Items.Add($"Work has been cancelled.");
                 Items.Add($"Execution time: {stopWatch.ElapsedMilliseconds}");
                 _cancellationSource.Dispose();
+                IsCancelButtonEnabled = false;
             }
         }
 
         private async void ParallelAsynchronousWork(object obj)
         {
-            Items.Clear();
-            ProgressValue = 0;
-            ProgressBarBackground = Brushes.LightSalmon;
-            RefreshGui();
+            GuiSetup();
 
             Worker worker = new Worker();
             var stopWatch = Stopwatch.StartNew();
@@ -128,6 +130,15 @@ namespace TaskProgressAndCancel
         private void RefreshGui()
         {
             Application.Current.Dispatcher.Invoke(new Action(() => { }), DispatcherPriority.ApplicationIdle);
+        }
+
+        private void GuiSetup()
+        {
+            Items.Clear();
+            ProgressBarBackground = Brushes.LightSalmon;
+            ProgressValue = 0;
+            IsCancelButtonEnabled = true;
+            RefreshGui();
         }
     }
 }
