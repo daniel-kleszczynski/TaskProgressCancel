@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TaskProgressAndCancel"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="700" Width="800">
     <Window.DataContext>
         <local:MainWindowViewModel />
     </Window.DataContext>
@@ -13,6 +13,7 @@
         <Button Command="{Binding SynchronousWorkCommand}">Synchronously</Button>
         <Button Command="{Binding AsynchronousWorkCommand}">Asynchronously</Button>
         <Button Command="{Binding ParallelAsynchronousWorkCommand}">Parallel Asynchronously</Button>
+        <Button Command="{Binding CancelWorkCommand}">Cancel</Button>
         <ProgressBar Value="{Binding ProgressValue}" Background="{Binding ProgressBarBackground}" Height="20"></ProgressBar>
         <ListView ItemsSource="{Binding Items}"></ListView>
     </StackPanel>

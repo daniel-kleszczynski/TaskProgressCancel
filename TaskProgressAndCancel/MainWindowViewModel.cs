@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -18,18 +15,20 @@ namespace TaskProgressAndCancel
 
         private SolidColorBrush _progressBarBackground;
         private int _progressValue;
+        private CancellationTokenSource _cancellationSource;
 
         public MainWindowViewModel()
         {
             SynchronousWorkCommand = new RelayCommand(SynchronousWork);
             AsynchronousWorkCommand = new RelayCommand(AsynchronousWork);
             ParallelAsynchronousWorkCommand = new RelayCommand(ParallelAsynchronousWork);
+            CancelWorkCommand = new RelayCommand(CancelWork);
         }
 
         public ICommand SynchronousWorkCommand { get;  }
         public ICommand AsynchronousWorkCommand { get;  }
         public ICommand ParallelAsynchronousWorkCommand { get;  }
-
+        public ICommand CancelWorkCommand { get;  }
 
         public SolidColorBrush ProgressBarBackground
         {
@@ -52,6 +51,7 @@ namespace TaskProgressAndCancel
 
             Items.Clear();
             ProgressBarBackground = Brushes.LightSalmon;
+            ProgressValue = 0;
             RefreshGui();
 
             var stopWatch = Stopwatch.StartNew();
@@ -71,26 +71,38 @@ namespace TaskProgressAndCancel
 
             Items.Clear();
             ProgressBarBackground = Brushes.LightSalmon;
+            ProgressValue = 0;
             RefreshGui();
 
             var progressTracker = new Progress<ProgressReport>();
             progressTracker.ProgressChanged += ProgressTracker_ProgressChanged;
 
+            _cancellationSource = new CancellationTokenSource();
             var stopWatch = Stopwatch.StartNew();
 
-            var package = await worker.CreatePackageAsync(ITEMS_COUNT, progressTracker);
-            stopWatch.Stop();
-            Items.Add($"Execution time: {stopWatch.ElapsedMilliseconds}");
+            try
+            {
+                var package = await worker.CreatePackageAsync(ITEMS_COUNT, progressTracker, 
+                    _cancellationSource.Token);
+            }
+            catch (OperationCanceledException) { }
+            finally
+            {
+                stopWatch.Stop();
+                Items.Add($"Work has been cancelled.");
+                Items.Add($"Execution time: {stopWatch.ElapsedMilliseconds}");
+                _cancellationSource.Dispose();
+            }
         }
 
         private async void ParallelAsynchronousWork(object obj)
         {
-            Worker worker = new Worker();
-
             Items.Clear();
+            ProgressValue = 0;
             ProgressBarBackground = Brushes.LightSalmon;
             RefreshGui();
 
+            Worker worker = new Worker();
             var stopWatch = Stopwatch.StartNew();
             var package = await worker.CreatePackageParallelAsync(ITEMS_COUNT);
 
@@ -100,6 +112,11 @@ namespace TaskProgressAndCancel
                 Items.Add(item);
 
             Items.Add($"Execution time: {stopWatch.ElapsedMilliseconds}");
+        }
+
+        private void CancelWork(object obj)
+        {
+            _cancellationSource?.Cancel();
         }
 
         private void ProgressTracker_ProgressChanged(object sender, ProgressReport e)

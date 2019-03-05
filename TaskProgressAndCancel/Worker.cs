@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace TaskProgressAndCancel
@@ -39,7 +40,10 @@ namespace TaskProgressAndCancel
             return _package;
         }
 
-        public async Task<List<string>> CreatePackageAsync(int size, IProgress<ProgressReport> progress)
+        public async Task<List<string>> CreatePackageAsync(
+            int size, 
+            IProgress<ProgressReport> progress,
+            CancellationToken cancellationToken)
         {
             _package = new List<string>();
             _index = 0;
@@ -47,6 +51,7 @@ namespace TaskProgressAndCancel
             for (int i = 0; i < size; i++)
             {
                 var item = await CreateItemAsync();
+                cancellationToken.ThrowIfCancellationRequested();
                 _package.Add(item);
 
                 var report = GenerateProgressReport(_package.Count, size);
