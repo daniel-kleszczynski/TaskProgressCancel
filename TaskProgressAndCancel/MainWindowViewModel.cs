@@ -16,6 +16,7 @@ namespace TaskProgressAndCancel
         private const int ITEMS_COUNT = 5;
 
         private SolidColorBrush _progressBarBackground;
+        private int _progressValue;
 
         public MainWindowViewModel()
         {
@@ -33,6 +34,12 @@ namespace TaskProgressAndCancel
         {
             get { return _progressBarBackground; }
             set { SetProperty(ref _progressBarBackground, value); }
+        }
+
+        public int ProgressValue
+        {
+            get { return _progressValue; }
+            set { SetProperty(ref _progressValue, value); }
         }
 
 
@@ -61,10 +68,11 @@ namespace TaskProgressAndCancel
             ProgressBarBackground = Brushes.LightSalmon;
             RefreshGui();
 
-            var package = await worker.CreatePackageAsync(ITEMS_COUNT);
+            var progressTracker = new Progress<ProgressReport>();
+            progressTracker.ProgressChanged += ProgressTracker_ProgressChanged;
 
-            foreach (var item in package)
-                Items.Add(item);
+
+            var package = await worker.CreatePackageAsync(ITEMS_COUNT, progressTracker);
         }
 
         private async void ParallelAsynchronousWork(object obj)
@@ -81,10 +89,15 @@ namespace TaskProgressAndCancel
                 Items.Add(item);
         }
 
+        private void ProgressTracker_ProgressChanged(object sender, ProgressReport e)
+        {
+            ProgressValue = e.PercentageCompleted;
+            Items.Add(e.NewItemCollected);
+        }
+
         private void RefreshGui()
         {
             Application.Current.Dispatcher.Invoke(new Action(() => { }), DispatcherPriority.ApplicationIdle);
-
         }
     }
 }

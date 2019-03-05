@@ -13,7 +13,7 @@
         <Button Command="{Binding SynchronousWorkCommand}">Synchronously</Button>
         <Button Command="{Binding AsynchronousWorkCommand}">Asynchronously</Button>
         <Button Command="{Binding ParallelAsynchronousWorkCommand}">Parallel Asynchronously</Button>
-        <ProgressBar x:Name="ProgressBar" Background="{Binding ProgressBarBackground}" Height="20"></ProgressBar>
+        <ProgressBar Value="{Binding ProgressValue}" Background="{Binding ProgressBarBackground}" Height="20"></ProgressBar>
         <ListView ItemsSource="{Binding Items}"></ListView>
     </StackPanel>
 </Window>

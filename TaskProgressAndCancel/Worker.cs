@@ -39,7 +39,7 @@ namespace TaskProgressAndCancel
             return _package;
         }
 
-        public async Task<List<string>> CreatePackageAsync(int size)
+        public async Task<List<string>> CreatePackageAsync(int size, IProgress<ProgressReport> progress)
         {
             _package = new List<string>();
             _index = 0;
@@ -48,6 +48,9 @@ namespace TaskProgressAndCancel
             {
                 var item = await CreateItemAsync();
                 _package.Add(item);
+
+                var report = GenerateProgressReport(_package.Count, size);
+                progress.Report(report);
             }
 
             return _package;
@@ -75,6 +78,16 @@ namespace TaskProgressAndCancel
             });
 
             return _package;
+        }
+
+        private ProgressReport GenerateProgressReport(int currentSize, int finalSize)
+        {
+            var percentageCompleted = currentSize * 100 / finalSize;
+            return new ProgressReport
+            {
+                NewItemCollected = _package.Last(),
+                PercentageCompleted = percentageCompleted
+            };
         }
     }
 }
