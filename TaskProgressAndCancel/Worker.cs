@@ -81,7 +81,7 @@ namespace TaskProgressAndCancel
             return _package;
         }
 
-        public async Task<List<string>> CreatePackageParallelAsync(int size)
+        public async Task<List<string>> CreatePackageParallelAsyncObsolete(int size)
         {
             _package = new List<string>();
             _index = 0;
@@ -100,6 +100,23 @@ namespace TaskProgressAndCancel
                 {
                     _package.Add(result);
                 }
+            });
+
+            return _package;
+        }
+
+        public async Task<List<string>> CreatePackageParallelAsync(int size)
+        {
+            _package = new List<string>();
+            _index = 0;
+
+            await Task.Run(() => 
+            {
+                Parallel.For(0, size, (i) =>
+                {
+                    var item = CreateItem();
+                    _package.Add(item);
+                });
             });
 
             return _package;
