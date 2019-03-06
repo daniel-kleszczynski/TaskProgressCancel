@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -11,7 +12,7 @@ namespace TaskProgressAndCancel
 {
     public class MainWindowViewModel : ViewModelBase
     {
-        private const int ITEMS_COUNT = 7;
+        private const int ITEMS_COUNT = 21;
 
         private SolidColorBrush _progressBarBackground;
         private int _progressValue;
@@ -27,11 +28,11 @@ namespace TaskProgressAndCancel
             CancelWorkCommand = new RelayCommand(CancelWork);
         }
 
-        public ICommand SynchronousWorkCommand { get;  }
-        public ICommand AsynchronousWorkCommand { get;  }
-        public ICommand ParallelAsynchronousWorkCommand { get;  }
-        public ICommand ParallelSynchronousWorkCommand { get;  }
-        public ICommand CancelWorkCommand { get;  }
+        public ICommand SynchronousWorkCommand { get; }
+        public ICommand AsynchronousWorkCommand { get; }
+        public ICommand ParallelAsynchronousWorkCommand { get; }
+        public ICommand ParallelSynchronousWorkCommand { get; }
+        public ICommand CancelWorkCommand { get; }
 
         public SolidColorBrush ProgressBarBackground
         {
@@ -86,7 +87,7 @@ namespace TaskProgressAndCancel
 
             try
             {
-                var package = await worker.CreatePackageAsync(ITEMS_COUNT, progressTracker, 
+                var package = await worker.CreatePackageAsync(ITEMS_COUNT, progressTracker,
                     _cancellationSource.Token);
             }
             catch (OperationCanceledException)
@@ -108,14 +109,24 @@ namespace TaskProgressAndCancel
 
             Worker worker = new Worker();
             var stopWatch = Stopwatch.StartNew();
-            var package = await worker.CreatePackageParallelAsync(ITEMS_COUNT);
+
+            var progressTracker = new Progress<ProgressReport>();
+            progressTracker.ProgressChanged += ProgressTracker_ProgressChanged;
+
+            _cancellationSource = new CancellationTokenSource();
+
+
+            var package = await worker.CreatePackageParallelAsync(ITEMS_COUNT, progressTracker,
+                _cancellationSource.Token);
 
             stopWatch.Stop();
-
-            foreach (var item in package)
-                Items.Add(item);
+            IsCancelButtonEnabled = false;
+            
+            if (Items.Count < ITEMS_COUNT)
+                Items.Add($"Work has been cancelled.");
 
             Items.Add($"Execution time: {stopWatch.ElapsedMilliseconds}");
+
         }
 
         private void ParallelSynchronousWork(object obj)

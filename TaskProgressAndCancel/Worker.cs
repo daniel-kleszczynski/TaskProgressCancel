@@ -12,7 +12,7 @@ namespace TaskProgressAndCancel
         private List<string> _package;
         private int _index;
         private object _lock = new object();
-                
+
         public string CreateItem()
         {
             string outcome = string.Empty;
@@ -30,7 +30,8 @@ namespace TaskProgressAndCancel
 
         public async Task<string> CreateItemAsync()
         {
-            return await Task.Run(() => {
+            return await Task.Run(() =>
+            {
                 string outcome = string.Empty;
                 Thread.Sleep(1000);
 
@@ -61,7 +62,7 @@ namespace TaskProgressAndCancel
         }
 
         public async Task<List<string>> CreatePackageAsync(
-            int size, 
+            int size,
             IProgress<ProgressReport> progress,
             CancellationToken cancellationToken)
         {
@@ -93,7 +94,7 @@ namespace TaskProgressAndCancel
                 tasks[i] = CreateItemAsync();
             }
 
-            await Task.WhenAll(tasks).ContinueWith((t) => 
+            await Task.WhenAll(tasks).ContinueWith((t) =>
             {
                 //t.Result contains array of string (composite Task<string>)
                 foreach (var result in t.Result)
@@ -105,17 +106,25 @@ namespace TaskProgressAndCancel
             return _package;
         }
 
-        public async Task<List<string>> CreatePackageParallelAsync(int size)
+        public async Task<List<string>> CreatePackageParallelAsync(int size,
+            IProgress<ProgressReport> progressTracker,
+            CancellationToken cancellationToken)
         {
             _package = new List<string>();
             _index = 0;
 
-            await Task.Run(() => 
+            await Task.Run(() =>
             {
                 Parallel.For(0, size, (i) =>
                 {
+                    if (cancellationToken.IsCancellationRequested)
+                        return;
+
                     var item = CreateItem();
                     _package.Add(item);
+
+                    var progressReport = GenerateProgressReport(_package.Count, size);
+                    progressTracker.Report(progressReport);
                 });
             });
 
@@ -127,11 +136,11 @@ namespace TaskProgressAndCancel
             _package = new List<string>();
             _index = 0;
 
-            Parallel.For(0, size, (Action<int>)((i) => 
+            Parallel.For(0, size, (Action<int>)((i) =>
             {
                 _package.Add(this.CreateItem());
             }));
-            
+
             return _package;
         }
 
