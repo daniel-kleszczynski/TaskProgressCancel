@@ -127,10 +127,10 @@ namespace TaskProgressAndCancel
             _package = new List<string>();
             _index = 0;
 
-            Parallel.For(0, size, (Action<int>)((i) => 
+            Parallel.For(0, size, (i) =>
             {
                 _package.Add(this.CreateItem());
-            }));
+            });
             
             return _package;
         }

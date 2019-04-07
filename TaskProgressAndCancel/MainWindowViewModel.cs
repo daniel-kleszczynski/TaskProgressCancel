@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Windows;
 using System.Windows.Input;
@@ -11,8 +14,6 @@ namespace TaskProgressAndCancel
 {
     public class MainWindowViewModel : ViewModelBase
     {
-        private const int ITEMS_COUNT = 7;
-
         private SolidColorBrush _progressBarBackground;
         private int _progressValue;
         private CancellationTokenSource _cancellationSource;
@@ -25,19 +26,17 @@ namespace TaskProgressAndCancel
             ParallelAsynchronousWorkCommand = new RelayCommand(ParallelAsynchronousWork);
             ParallelSynchronousWorkCommand = new RelayCommand(ParallelSynchronousWork);
             CancelWorkCommand = new RelayCommand(CancelWork);
+            StartWorkCommand = new RelayCommand(StartWork);
+
+            PopulateWorkTypeDropdown();
         }
 
         public ICommand SynchronousWorkCommand { get;  }
         public ICommand AsynchronousWorkCommand { get;  }
         public ICommand ParallelAsynchronousWorkCommand { get;  }
         public ICommand ParallelSynchronousWorkCommand { get;  }
-        public ICommand CancelWorkCommand { get;  }
-
-        public SolidColorBrush ProgressBarBackground
-        {
-            get { return _progressBarBackground; }
-            set { SetProperty(ref _progressBarBackground, value); }
-        }
+        public ICommand CancelWorkCommand { get; }
+        public ICommand StartWorkCommand { get;  }
 
         public int ProgressValue
         {
@@ -54,6 +53,15 @@ namespace TaskProgressAndCancel
 
 
         public ObservableCollection<string> Items { get; set; } = new ObservableCollection<string>();
+        public int ItemsCount { get; set; } = 10;
+        public List<WorkTypeWrapper> WorkTypes { get; set; }
+
+        public WorkTypeWrapper SelectedWorkType { get; set; }
+
+        private void StartWork(object obj)
+        {
+            SelectedWorkType.Command.Execute(obj);
+        }
 
         private void SynchronousWork(object obj)
         {
@@ -62,7 +70,7 @@ namespace TaskProgressAndCancel
             GuiSetup();
 
             var stopWatch = Stopwatch.StartNew();
-            var package = worker.CreatePackage(ITEMS_COUNT);
+            var package = worker.CreatePackage(ItemsCount);
 
             stopWatch.Stop();
 
@@ -70,6 +78,7 @@ namespace TaskProgressAndCancel
                 Items.Add(item);
 
             Items.Add($"Execution time: {stopWatch.ElapsedMilliseconds}");
+            ProgressValue = package.Count * 100 / ItemsCount;
         }
 
         private async void AsynchronousWork(object obj)
@@ -86,7 +95,7 @@ namespace TaskProgressAndCancel
 
             try
             {
-                var package = await worker.CreatePackageAsync(ITEMS_COUNT, progressTracker, 
+                var package = await worker.CreatePackageAsync(ItemsCount, progressTracker, 
                     _cancellationSource.Token);
             }
             catch (OperationCanceledException)
@@ -108,7 +117,7 @@ namespace TaskProgressAndCancel
 
             Worker worker = new Worker();
             var stopWatch = Stopwatch.StartNew();
-            var package = await worker.CreatePackageParallelAsync(ITEMS_COUNT);
+            var package = await worker.CreatePackageParallelAsync(ItemsCount);
 
             stopWatch.Stop();
 
@@ -116,6 +125,7 @@ namespace TaskProgressAndCancel
                 Items.Add(item);
 
             Items.Add($"Execution time: {stopWatch.ElapsedMilliseconds}");
+            ProgressValue = package.Count * 100 / ItemsCount;
         }
 
         private void ParallelSynchronousWork(object obj)
@@ -125,7 +135,7 @@ namespace TaskProgressAndCancel
             GuiSetup();
 
             var stopWatch = Stopwatch.StartNew();
-            var package = worker.CreatePackageParallelSync(ITEMS_COUNT);
+            var package = worker.CreatePackageParallelSync(ItemsCount);
 
             stopWatch.Stop();
 
@@ -133,6 +143,7 @@ namespace TaskProgressAndCancel
                 Items.Add(item);
 
             Items.Add($"Execution time: {stopWatch.ElapsedMilliseconds}");
+            ProgressValue = package.Count * 100 / ItemsCount;
         }
 
         private void CancelWork(object obj)
@@ -154,10 +165,28 @@ namespace TaskProgressAndCancel
         private void GuiSetup()
         {
             Items.Clear();
-            ProgressBarBackground = Brushes.LightSalmon;
             ProgressValue = 0;
             IsCancelButtonEnabled = true;
             RefreshGui();
+        }
+
+        private void PopulateWorkTypeDropdown()
+        {
+            var workTypes = typeof(MainWindowViewModel).GetProperties()
+                .Where(p => IsWorkCommandProperty(p))
+                .Select(p => new WorkTypeWrapper(p, this));
+
+            WorkTypes = workTypes.ToList();
+        }
+
+        private bool IsWorkCommandProperty(PropertyInfo property)
+        {
+            const string TYPE_POSTFIX = "WorkCommand";
+
+            return typeof(ICommand).IsAssignableFrom(property.PropertyType) &&
+                property.Name.EndsWith(TYPE_POSTFIX) && 
+                !property.Name.Equals(nameof(StartWorkCommand)) &&
+                !property.Name.Equals(nameof(CancelWorkCommand));
         }
     }
 }

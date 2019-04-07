@@ -9,13 +9,43 @@
     <Window.DataContext>
         <local:MainWindowViewModel />
     </Window.DataContext>
-    <StackPanel Margin="50">
-        <Button Command="{Binding SynchronousWorkCommand}">Synchronously</Button>
-        <Button Command="{Binding AsynchronousWorkCommand}">Asynchronously</Button>
-        <Button Command="{Binding ParallelAsynchronousWorkCommand}">Parallel Asynchronously</Button>
-        <Button Command="{Binding ParallelSynchronousWorkCommand}">Parallel Synchronously</Button>
-        <Button Command="{Binding CancelWorkCommand}" IsEnabled="{Binding IsCancelButtonEnabled}">Cancel</Button>
-        <ProgressBar Value="{Binding ProgressValue}" Background="{Binding ProgressBarBackground}" Height="20"></ProgressBar>
+    <Window.Resources>
+        <Style TargetType="{x:Type Button}">
+            <Setter Property="Margin" Value="5" />
+        </Style>
+        <Style x:Key="commonMargin" TargetType="{x:Type FrameworkElement}">
+            <Setter Property="Margin" Value="20 0" />
+        </Style>
+        <Style TargetType="{x:Type ProgressBar}" BasedOn="{StaticResource commonMargin}">
+            <Setter Property="Height" Value="20" />
+            <Setter Property="Background" Value="LightSalmon" />
+        </Style>
+        <Style TargetType="{x:Type ListView}" BasedOn="{StaticResource commonMargin}">
+            <Setter Property="Height" Value="300" />
+        </Style>
+    </Window.Resources>
+    <StackPanel>
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="80" />
+                <ColumnDefinition Width="200" />
+                <ColumnDefinition Width="80" />
+                <ColumnDefinition Width="80" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="Items Count: " />
+            <TextBox Grid.Row="1" Margin="5" Text="{Binding ItemsCount}"></TextBox>
+            
+            <TextBlock Grid.Column="1" Text="Work Type: " />
+            <ComboBox Grid.Row="1" Grid.Column="1" Margin="5" ItemsSource="{Binding WorkTypes}" DisplayMemberPath="Title" SelectedValuePath="Command" SelectedIndex="0" SelectedItem="{Binding SelectedWorkType}"></ComboBox>
+
+            <Button Grid.Row="1" Grid.Column="2" Command="{Binding StartWorkCommand}">Start</Button>
+            <Button Grid.Row="1" Grid.Column="3" Command="{Binding CancelWorkCommand}">Cancel</Button>
+        </Grid>
         <ListView ItemsSource="{Binding Items}"></ListView>
+        <ProgressBar Value="{Binding ProgressValue}"></ProgressBar>
     </StackPanel>
 </Window>
