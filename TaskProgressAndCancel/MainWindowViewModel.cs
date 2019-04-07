@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -117,15 +118,24 @@ namespace TaskProgressAndCancel
 
             Worker worker = new Worker();
             var stopWatch = Stopwatch.StartNew();
-            var package = await worker.CreatePackageParallelAsync(ItemsCount);
+
+            var progressTracker = new Progress<ProgressReport>();
+            progressTracker.ProgressChanged += ProgressTracker_ProgressChanged;
+
+            _cancellationSource = new CancellationTokenSource();
+
+
+            var package = await worker.CreatePackageParallelAsync(ItemsCount, progressTracker,
+                _cancellationSource.Token);
 
             stopWatch.Stop();
-
-            foreach (var item in package)
-                Items.Add(item);
+            IsCancelButtonEnabled = false;
+            
+            if (Items.Count < ItemsCount)
+                Items.Add($"Work has been cancelled.");
 
             Items.Add($"Execution time: {stopWatch.ElapsedMilliseconds}");
-            ProgressValue = package.Count * 100 / ItemsCount;
+
         }
 
         private void ParallelSynchronousWork(object obj)

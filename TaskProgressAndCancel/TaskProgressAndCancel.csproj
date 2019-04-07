@@ -58,7 +58,6 @@
     <Compile Include="WorkTypeWrapper.cs" />
     <Compile Include="ProgressReport.cs" />
     <Compile Include="RelayCommand.cs" />
-    <Compile Include="EventBehaviors.cs" />
     <Compile Include="ViewModelBase.cs" />
     <Compile Include="Worker.cs" />
     <Page Include="MainWindow.xaml">
